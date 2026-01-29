@@ -30,18 +30,11 @@ const CONFIG = {
 // DOM ELEMENTS
 // ─────────────────────────────────────────────────────────────────────────────
 const elements = {
-  lockScreen: document.getElementById("lockScreen"),
+  loadingScreen: document.getElementById("loadingScreen"),
+  loadingParticles: document.getElementById("loadingParticles"),
   birthdayContent: document.getElementById("birthdayContent"),
-  particles: document.getElementById("particles"),
-  stars: document.getElementById("stars"),
   heroParticles: document.getElementById("heroParticles"),
   cursorGlow: document.getElementById("cursorGlow"),
-  countdown: {
-    days: document.getElementById("days"),
-    hours: document.getElementById("hours"),
-    minutes: document.getElementById("minutes"),
-    seconds: document.getElementById("seconds"),
-  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -223,6 +216,169 @@ function startCountdown() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// HOLOGRAPHIC LOADING SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Creates floating stars for the loading screen
+ */
+function createLoadingStars() {
+  const starField = document.getElementById("starField");
+  if (!starField) return;
+
+  const starCount = 100;
+  const colors = [
+    "#ff2d95",
+    "#a855f7",
+    "#3b82f6",
+    "#06b6d4",
+    "#fbbf24",
+    "#ffffff",
+  ];
+
+  for (let i = 0; i < starCount; i++) {
+    const star = document.createElement("div");
+    const size = random(1, 4);
+    const color = randomItem(colors);
+
+    star.style.cssText = `
+      position: absolute;
+      left: ${random(0, 100)}%;
+      top: ${random(0, 100)}%;
+      width: ${size}px;
+      height: ${size}px;
+      background: ${color};
+      border-radius: 50%;
+      box-shadow: 0 0 ${size * 3}px ${color};
+      animation: star-twinkle ${random(2, 5)}s ease-in-out infinite;
+      animation-delay: ${random(-3, 0)}s;
+      opacity: ${random(0.3, 1)};
+    `;
+
+    starField.appendChild(star);
+  }
+
+  // Add star twinkle animation dynamically
+  if (!document.getElementById("starKeyframes")) {
+    const style = document.createElement("style");
+    style.id = "starKeyframes";
+    style.textContent = `
+      @keyframes star-twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.5); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+/**
+ * Creates floating particles for loading screen
+ */
+function createLoadingParticles() {
+  const container = document.getElementById("loadingParticles");
+  if (!container) return;
+
+  const particleCount = 50;
+  const colors = ["#ff2d95", "#a855f7", "#3b82f6", "#06b6d4", "#fbbf24"];
+
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement("div");
+    const size = random(2, 6);
+    const color = randomItem(colors);
+
+    particle.style.cssText = `
+      position: absolute;
+      left: ${random(0, 100)}%;
+      top: ${random(100, 120)}%;
+      width: ${size}px;
+      height: ${size}px;
+      background: ${color};
+      border-radius: 50%;
+      box-shadow: 0 0 ${size * 4}px ${color};
+      animation: particle-float-up ${random(4, 8)}s linear infinite;
+      animation-delay: ${random(-5, 0)}s;
+    `;
+
+    container.appendChild(particle);
+  }
+
+  // Add particle animation dynamically
+  if (!document.getElementById("particleKeyframes")) {
+    const style = document.createElement("style");
+    style.id = "particleKeyframes";
+    style.textContent = `
+      @keyframes particle-float-up {
+        0% { 
+          transform: translateY(0) translateX(0) scale(1);
+          opacity: 0;
+        }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { 
+          transform: translateY(-120vh) translateX(${random(-50, 50)}px) scale(0.5);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+/**
+ * Animates the futuristic progress bar
+ */
+function animateProgress() {
+  const progressFill = document.getElementById("progressFill");
+  const percentEl = document.getElementById("progressPercent");
+  if (!percentEl) return;
+
+  let progress = 0;
+  const duration = 4000; // 4 seconds
+  const interval = 30; // Update every 30ms
+  const increment = 100 / (duration / interval);
+
+  const timer = setInterval(() => {
+    progress += increment;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(timer);
+    }
+    percentEl.textContent = Math.floor(progress) + "%";
+    if (progressFill) {
+      progressFill.style.width = progress + "%";
+    }
+  }, interval);
+}
+
+/**
+ * Hides the loading screen with animation
+ */
+function hideLoadingScreen() {
+  if (!elements.loadingScreen) return;
+
+  // Start the fade out animation after progress completes
+  setTimeout(() => {
+    elements.loadingScreen.classList.add("hidden");
+
+    // After animation completes, reveal the birthday content
+    setTimeout(() => {
+      showBirthdayContentImmediately();
+    }, 1200);
+  }, 4500); // Match progress animation duration + buffer
+}
+
+/**
+ * Initializes all loading screen animations
+ */
+function initLoadingScreen() {
+  createLoadingStars();
+  createLoadingParticles();
+  animateProgress();
+  hideLoadingScreen();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PARTICLE SYSTEMS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -380,10 +536,21 @@ function unlockBirthdayContent() {
  * Shows birthday content immediately
  */
 function showBirthdayContentImmediately() {
-  if (!elements.lockScreen || !elements.birthdayContent) return;
+  if (!elements.birthdayContent) return;
 
-  elements.lockScreen.classList.add("hidden");
+  // Remove hidden class if present
+  if (elements.lockScreen) {
+    elements.lockScreen.classList.add("hidden");
+  }
   elements.birthdayContent.classList.remove("hidden");
+
+  // Immediately show hero section elements (first screen)
+  const heroElements = document.querySelectorAll(".hero .animate-on-scroll");
+  heroElements.forEach((el, index) => {
+    setTimeout(() => {
+      el.classList.add("visible");
+    }, index * 100); // Staggered reveal
+  });
 
   setTimeout(() => {
     createHeroParticles();
@@ -539,7 +706,7 @@ function initParallax() {
  * Adds subtle tilt effect to cards on hover
  */
 function initCardTilt() {
-  const cards = document.querySelectorAll(".about-card, .career-card-main");
+  const cards = document.querySelectorAll(".about-card, .mca-card-main");
 
   cards.forEach((card) => {
     card.addEventListener("mousemove", (e) => {
@@ -576,16 +743,6 @@ function init() {
     initCursorGlow();
   }
 
-  // Check if it's already the birthday
-  if (shouldShowBirthdayContent()) {
-    showBirthdayContentImmediately();
-  } else {
-    // Show countdown
-    createStars();
-    createParticles();
-    startCountdown();
-  }
-
   // Initialize smooth scroll
   initSmoothScroll();
 
@@ -596,6 +753,14 @@ function init() {
   window.addEventListener("resize", debounce(checkElementsInView, 200), {
     passive: true,
   });
+
+  // Show loading screen with new 3D animations
+  if (elements.loadingScreen) {
+    initLoadingScreen();
+  } else {
+    // Fallback if loading screen doesn't exist
+    showBirthdayContentImmediately();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
